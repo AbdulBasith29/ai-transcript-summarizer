@@ -2,7 +2,16 @@ document.getElementById("summarizeBtn").addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
-        func: extractTranscript
+        func: () => {
+          try {
+            const lines = Array.from(document.querySelectorAll("ytd-transcript-segment-renderer span"))
+              .map(el => el.innerText)
+              .filter(Boolean);
+            return lines.join("\n");
+          } catch (err) {
+            return "Error extracting transcript: " + err.message;
+          }
+        }
       }, (results) => {
         const output = document.getElementById("output");
         if (results && results[0] && results[0].result) {
@@ -13,15 +22,4 @@ document.getElementById("summarizeBtn").addEventListener("click", () => {
       });
     });
   });
-  
-  function extractTranscript() {
-    try {
-      const lines = Array.from(document.querySelectorAll("ytd-transcript-segment-renderer span"))
-        .map(el => el.innerText)
-        .filter(Boolean);
-      return lines.join("\n");
-    } catch (err) {
-      return "Error extracting transcript: " + err.message;
-    }
-  }
-  
+   
