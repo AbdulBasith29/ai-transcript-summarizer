@@ -3,7 +3,7 @@
     "name": "Video transcript summarizer",
     "version": "1.0",
     "description": "Summarizes youtube video transcripts using AI",
-    "permissions": ["activeTab", "storage"],
+    "permissions": ["activeTab", "storage", "scripting", "tabs"],
     "host_permissions": ["https://www.youtube.com/"],
     "browser_action": {
         "default_popup": "popup.html",
