@@ -1,25 +1,18 @@
 document.getElementById("summarizeBtn").addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: () => {
-          try {
-            const lines = Array.from(document.querySelectorAll("ytd-transcript-segment-renderer span"))
-              .map(el => el.innerText)
-              .filter(Boolean);
-            return lines.join("\n");
-          } catch (err) {
-            return "Error extracting transcript: " + err.message;
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { action: "extractTranscript" },
+        (response) => {
+          const output = document.getElementById("output");
+          if (response && response.transcript) {
+            output.textContent = response.transcript;
+          } else {
+            output.textContent =
+              "Transcript not found. Try refreshing or opening the transcript panel.";
           }
         }
-      }, (results) => {
-        const output = document.getElementById("output");
-        if (results && results[0] && results[0].result) {
-          output.textContent = results[0].result;
-        } else {
-          output.textContent = "Transcript not found. Try refreshing or opening the transcript panel.";
-        }
-      });
+      );
     });
   });
-   
+  
