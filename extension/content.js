@@ -1,15 +1,13 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "extractTranscript") {
       try {
-        const lines = Array.from(document.querySelectorAll("ytd-transcript-segment-renderer span"))
-          .map(el => el.innerText)
-          .filter(Boolean);
-        const result = lines.join("\n");
-        sendResponse({ transcript: result });
+        const segments = document.querySelectorAll("ytd-transcript-segment-renderer");
+        const lines = Array.from(segments).map(el => el.innerText.trim()).filter(Boolean);
+        sendResponse({ transcript: lines.join("\n") });
       } catch (err) {
         sendResponse({ transcript: null, error: err.message });
       }
     }
-    return true; // Needed for async sendResponse
+    return true;
   });
   
