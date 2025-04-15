@@ -1,32 +1,70 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title> Transcript Summarizer </title>
-    <style>
-        body { font-family: sans-serif; padding: 10px; width: 300px; }
-        button { margin-bottom: 10px; }
-        pre { white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
-        .spinner {
-          display: none;
-          border: 4px solid #f3f3f3;
-          border-top: 4px solid #3498db;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          animation: spin 1s linear infinite;
-          margin-top: 10px;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      </style>
-    </head>
-    <body>
-      <h3>Summarize Video</h3>
-      <button id="summarizeBtn">Get Transcript</button>
-      <pre id="output">Click the button on a YouTube video page.</pre>
-      <div class="spinner" id="spinner"></div>
-      <script src="popup.js"></script>
-    </body>
+<head>
+  <title>Transcript Summarizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 16px;
+      width: 320px;
+      background: #f7f7f7;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+      color: #222;
+    }
+
+    button {
+      background-color: #111827;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background-color: #1f2937;
+    }
+
+    #loading {
+      color: #555;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    #output {
+      white-space: pre-wrap;
+      max-height: 250px;
+      overflow-y: auto;
+      background-color: white;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+    }
+
+    .subheading {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h2>AI Video Summary</h2>
+
+  <button id="summarizeBtn">🧠 Summarize This Video</button>
+  <p id="loading" style="display: none;">Summarizing, please wait...</p>
+
+  <div class="subheading">Summary Output:</div>
+  <pre id="output">Click the button on a YouTube video page.</pre>
+
+  <script src="popup.js"></script>
+</body>
 </html>
