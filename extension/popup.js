@@ -1,38 +1,49 @@
 document.getElementById("summarizeBtn").addEventListener("click", () => {
-    const spinner = document.getElementById("spinner");
     const output = document.getElementById("output");
+    const loading = document.getElementById("loading");
   
-    // Show the spinner and clear the output
-    spinner.style.display = "block";
     output.textContent = "";
+    loading.style.display = "block";
   
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(
         tabs[0].id,
         { action: "extractTranscript" },
-        (response) => {
-          // Hide the spinner
-          spinner.style.display = "none";
+        async (response) => {
+          if (chrome.runtime.lastError) {
+            output.textContent = "❌ Could not connect to YouTube tab. Make sure you're on a video page.";
+            loading.style.display = "none";
+            return;
+          }
   
           if (response && response.transcript) {
-            const summary = response.transcript;
+            const summary = await summarizeTranscript(response.transcript);
             output.textContent = summary;
-  
-            // Save the summary in local storage
             localStorage.setItem("lastSummary", summary);
           } else {
-            output.textContent =
-              "Transcript not found. Try refreshing or opening the transcript panel.";
+            output.textContent = "❌ Transcript not found. Make sure it's open.";
           }
+  
+          loading.style.display = "none";
         }
       );
     });
   });
   
-  // Load the last saved summary when the popup opens
-  window.addEventListener("DOMContentLoaded", () => {
-    const saved = localStorage.getItem("lastSummary");
-    if (saved) {
-      document.getElementById("output").textContent = saved;
+  async function summarizeTranscript(transcript) {
+    try {
+      const response = await fetch("http://localhost:5000/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript })
+      });
+  
+      if (!response.ok) throw new Error("Server error");
+  
+      const data = await response.json();
+      return data.summary;
+    } catch (err) {
+      return "❌ Could not connect to backend. Is Flask running?";
     }
-  });
+  }
+  
