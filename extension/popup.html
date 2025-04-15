@@ -6,12 +6,27 @@
         body { font-family: sans-serif; padding: 10px; width: 300px; }
         button { margin-bottom: 10px; }
         pre { white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        .spinner {
+          display: none;
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #3498db;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          animation: spin 1s linear infinite;
+          margin-top: 10px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
       </style>
     </head>
     <body>
       <h3>Summarize Video</h3>
       <button id="summarizeBtn">Get Transcript</button>
       <pre id="output">Click the button on a YouTube video page.</pre>
+      <div class="spinner" id="spinner"></div>
       <script src="popup.js"></script>
     </body>
-    </html>
+</html>
