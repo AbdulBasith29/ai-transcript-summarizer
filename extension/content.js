@@ -1,30 +1,12 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "extractTranscript") {
       try {
-        let segments = document.querySelectorAll("ytd-transcript-segment-renderer span");
-  
-        if (segments.length === 0) {
-          console.log("⚠️ Trying cue-group fallback...");
-          segments = document.querySelectorAll("div.cue-group span");
-        }
-  
-        console.log("📺 Segments found:", segments.length);
-  
+        const segments = document.querySelectorAll("ytd-transcript-segment-renderer");
         const lines = Array.from(segments)
           .map(el => el.innerText.trim())
           .filter(Boolean);
-  
-        console.log("📝 Extracted lines:", lines.length);
-  
-        const result = lines.join("\n");
-  
-        if (!result) {
-          console.warn("⚠️ Transcript was empty or not found.");
-        }
-  
-        sendResponse({ transcript: result });
+        sendResponse({ transcript: lines.join("\n") });
       } catch (err) {
-        console.error("❌ Error extracting transcript:", err);
         sendResponse({ transcript: null, error: err.message });
       }
     }
