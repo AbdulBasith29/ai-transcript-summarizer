@@ -2,9 +2,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "extractTranscript") {
       try {
         let segments = document.querySelectorAll("ytd-transcript-segment-renderer span");
+  
+        // Fallback for newer YouTube transcript layout
         if (segments.length === 0) {
-          // Fallback selector for new transcript UIs (auto-gen)
-          segments = document.querySelectorAll("div.cue-group > div > span");
+          console.log("⚠️ Trying updated selector...");
+          segments = document.querySelectorAll("span.segment-text");
         }
   
         console.log("📺 Segments found:", segments.length);
