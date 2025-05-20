@@ -26,33 +26,140 @@
       font-size: 15px;
       width: 100%;
       margin-bottom: 10px;
+      transition: all 0.2s ease;
     }
 
     button:hover {
       background-color: #1f2937;
     }
 
-    #loading {
+    button:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .loading-container {
+      display: none;
+      margin: 10px 0;
+    }
+
+    .loading-bar {
+      width: 100%;
+      height: 4px;
+      background-color: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .loading-progress {
+      width: 0%;
+      height: 100%;
+      background-color: #3b82f6;
+      transition: width 0.3s ease;
+    }
+
+    .loading-text {
       color: #555;
       font-size: 14px;
+      text-align: center;
+    }
+
+    .status-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin-bottom: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .status-icon {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+    }
+
+    .output-container {
+      background-color: white;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
     }
 
     #output {
       white-space: pre-wrap;
-      max-height: 250px;
+      max-height: 300px;
       overflow-y: auto;
-      background-color: white;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 16px;
       font-size: 14px;
-      border: 1px solid #ccc;
+      line-height: 1.6;
+      color: #374151;
+    }
+
+    /* Style for the scrollbar */
+    #output::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #output::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    #output::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    #output::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
 
     .subheading {
       font-size: 14px;
-      color: #666;
-      margin-bottom: 6px;
+      color: #4b5563;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .error {
+      color: #dc2626;
+    }
+
+    .success {
+      color: #059669;
+    }
+
+    /* Formatting for different parts of the summary */
+    .summary-section {
+      margin-bottom: 16px;
+    }
+
+    .summary-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .summary-title {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+
+    .summary-content {
+      color: #4b5563;
+    }
+
+    .summary-bullet {
+      margin-left: 16px;
+      position: relative;
+    }
+
+    .summary-bullet::before {
+      content: "•";
+      position: absolute;
+      left: -12px;
+      color: #6b7280;
     }
   </style>
 </head>
@@ -60,12 +167,24 @@
   <h2>AI Video Summary</h2>
 
   <button id="summarizeBtn">🧠 Summarize This Video</button>
-  <p id="loading" style="display: none;">Summarizing, please wait...</p>
+  
+  <div class="loading-container" id="loadingContainer">
+    <div class="loading-bar">
+      <div class="loading-progress" id="loadingProgress"></div>
+    </div>
+    <div class="loading-text" id="loadingText">Initializing...</div>
+  </div>
+
+  <div class="status-container" id="statusContainer" style="display: none;">
+    <span class="status-icon" id="statusIcon">⏳</span>
+    <span id="statusText">Processing...</span>
+  </div>
 
   <div class="subheading">Summary Output:</div>
-  <pre id="output">Click the button on a YouTube video page.</pre>
+  <div class="output-container">
+    <pre id="output">Click the button on a YouTube video page.</pre>
+  </div>
 
-  <!-- ✅ Put this at the bottom of body, NOT in the head -->
   <script src="popup.js"></script>
 </body>
 </html>
