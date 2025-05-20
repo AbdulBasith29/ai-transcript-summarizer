@@ -7,6 +7,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusIcon = document.getElementById("statusIcon");
   const statusText = document.getElementById("statusText");
   const summarizeBtn = document.getElementById("summarizeBtn");
+  const chatInput = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const chatMessages = document.getElementById("chatMessages");
+  const responseFormat = document.getElementById("responseFormat");
+
+  let currentTranscript = null;
 
   function formatSummary(text) {
     // Split the text into sections based on "Chunk X Summary:" markers
@@ -61,6 +67,66 @@ document.addEventListener("DOMContentLoaded", () => {
     loadingText.textContent = message;
   }
 
+  function addMessage(content, isUser = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${isUser ? 'user-message' : 'ai-message'}`;
+    messageDiv.textContent = content;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function askQuestion(question) {
+    if (!currentTranscript) {
+      addMessage("Please summarize the video first before asking questions.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          question,
+          transcript: currentTranscript,
+          format: responseFormat.value
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response from server");
+      }
+
+      const data = await response.json();
+      addMessage(data.answer);
+    } catch (error) {
+      addMessage("Sorry, I couldn't process your question. Please try again.");
+    }
+  }
+
+  // Handle chat input
+  chatInput.addEventListener('input', () => {
+    sendBtn.disabled = !chatInput.value.trim();
+  });
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) {
+        sendBtn.click();
+      }
+    }
+  });
+
+  sendBtn.addEventListener('click', async () => {
+    const question = chatInput.value.trim();
+    if (!question) return;
+
+    addMessage(question, true);
+    chatInput.value = '';
+    sendBtn.disabled = true;
+    await askQuestion(question);
+  });
+
   summarizeBtn.addEventListener("click", async () => {
     output.textContent = "";
     loadingContainer.style.display = "block";
@@ -97,6 +163,9 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(response?.error || "Could not find transcript. Make sure captions are available for this video.");
       }
 
+      // Store the transcript for chat
+      currentTranscript = response.transcript;
+
       updateProgress(40, "Transcript extracted!");
       updateStatus("Transcript extracted successfully", 'success');
       await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause to show success
@@ -114,9 +183,15 @@ document.addEventListener("DOMContentLoaded", () => {
       output.innerHTML = formatSummary(summary);
       localStorage.setItem("lastSummary", summary);
 
+      // Enable chat
+      chatInput.disabled = false;
+      chatInput.placeholder = "Ask a question about the video...";
+
     } catch (error) {
       updateStatus(error.message, 'error');
       output.textContent = `❌ ${error.message}`;
+      chatInput.disabled = true;
+      chatInput.placeholder = "Please summarize the video first...";
     } finally {
       loadingContainer.style.display = "none";
       summarizeBtn.disabled = false;

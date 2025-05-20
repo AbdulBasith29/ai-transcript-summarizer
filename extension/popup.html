@@ -85,6 +85,7 @@
       border-radius: 8px;
       border: 1px solid #e5e7eb;
       overflow: hidden;
+      margin-bottom: 16px;
     }
 
     #output {
@@ -161,6 +162,103 @@
       left: -12px;
       color: #6b7280;
     }
+
+    /* Chat interface styles */
+    .chat-container {
+      margin-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 16px;
+    }
+
+    .chat-input-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      resize: none;
+      min-height: 36px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
+    .chat-send-btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+
+    .chat-send-btn:hover {
+      background-color: #2563eb;
+    }
+
+    .chat-send-btn:disabled {
+      background-color: #93c5fd;
+      cursor: not-allowed;
+    }
+
+    .chat-messages {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+
+    .chat-message {
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .user-message {
+      background-color: #e5e7eb;
+      color: #1f2937;
+      margin-left: 24px;
+    }
+
+    .ai-message {
+      background-color: #f3f4f6;
+      color: #374151;
+      margin-right: 24px;
+    }
+
+    .format-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .format-toggle label {
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .format-toggle select {
+      padding: 4px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #374151;
+    }
   </style>
 </head>
 <body>
@@ -183,6 +281,30 @@
   <div class="subheading">Summary Output:</div>
   <div class="output-container">
     <pre id="output">Click the button on a YouTube video page.</pre>
+  </div>
+
+  <div class="chat-container">
+    <div class="subheading">Ask Questions About the Video:</div>
+    
+    <div class="format-toggle">
+      <label for="responseFormat">Response Format:</label>
+      <select id="responseFormat">
+        <option value="paragraph">📄 Paragraph</option>
+        <option value="bullet">📝 Bullet Points</option>
+      </select>
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="chat-input-container">
+      <textarea 
+        id="chatInput" 
+        class="chat-input" 
+        placeholder="Ask a question about the video..."
+        rows="1"
+      ></textarea>
+      <button id="sendBtn" class="chat-send-btn" disabled>Send</button>
+    </div>
   </div>
 
   <script src="popup.js"></script>
