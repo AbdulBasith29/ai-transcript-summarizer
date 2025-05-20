@@ -173,12 +173,14 @@
 
     .chat-input-container {
       display: flex;
+      flex-direction: column;
       gap: 8px;
       margin-bottom: 12px;
     }
 
     .chat-input {
-      flex: 1;
+      width: 100%;
+      flex: none;
       padding: 10px 14px;
       border: 1px solid #e5e7eb;
       border-radius: 6px;
@@ -198,23 +200,8 @@
     }
 
     .chat-send-btn {
-      background-color: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 16px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.2s;
-    }
-
-    .chat-send-btn:hover {
-      background-color: #2563eb;
-    }
-
-    .chat-send-btn:disabled {
-      background-color: #93c5fd;
-      cursor: not-allowed;
+      width: 100%;
+      margin: 0;
     }
 
     .chat-messages {
