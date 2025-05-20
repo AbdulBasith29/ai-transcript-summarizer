@@ -106,6 +106,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle chat input
   chatInput.addEventListener('input', () => {
     sendBtn.disabled = !chatInput.value.trim();
+    // Auto-resize textarea
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 180) + 'px';
   });
 
   chatInput.addEventListener('keydown', (e) => {

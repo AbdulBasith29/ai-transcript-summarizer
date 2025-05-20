@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Transcript Summarizer</title>
   <style>
     body {
@@ -178,14 +179,16 @@
 
     .chat-input {
       flex: 1;
-      padding: 8px 12px;
+      padding: 10px 14px;
       border: 1px solid #e5e7eb;
       border-radius: 6px;
-      font-size: 14px;
+      font-size: 15px;
       resize: none;
-      min-height: 36px;
-      max-height: 100px;
+      min-height: 48px;
+      max-height: 180px;
       overflow-y: auto;
+      line-height: 1.6;
+      box-sizing: border-box;
     }
 
     .chat-input:focus {
