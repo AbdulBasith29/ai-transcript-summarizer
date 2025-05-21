@@ -13,7 +13,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const responseFormat = document.getElementById("responseFormat");
 
   let currentTranscript = null;
+  let chatHistory = [];
 
+  // --- Persistence Helpers ---
+  function saveState(summary, transcript, chatHistory) {
+    localStorage.setItem("lastSummary", summary);
+    localStorage.setItem("lastTranscript", transcript);
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+  }
+
+  function loadState() {
+    return {
+      summary: localStorage.getItem("lastSummary"),
+      transcript: localStorage.getItem("lastTranscript"),
+      chatHistory: JSON.parse(localStorage.getItem("chatHistory") || "[]")
+    };
+  }
+
+  function clearState() {
+    localStorage.removeItem("lastSummary");
+    localStorage.removeItem("lastTranscript");
+    localStorage.removeItem("chatHistory");
+  }
+
+  // --- Chat UI ---
   function formatSummary(text) {
     // Split the text into sections based on "Chunk X Summary:" markers
     const sections = text.split(/(?=Chunk \d+ Summary:)/);
@@ -73,6 +96,14 @@ document.addEventListener("DOMContentLoaded", () => {
     messageDiv.textContent = content;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    // Save to chat history
+    chatHistory.push({ content, isUser });
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+  }
+
+  function renderChatHistory() {
+    chatMessages.innerHTML = '';
+    chatHistory.forEach(msg => addMessage(msg.content, msg.isUser));
   }
 
   async function askQuestion(question) {
@@ -80,7 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
       addMessage("Please summarize the video first before asking questions.");
       return;
     }
-
     try {
       const response = await fetch("http://localhost:5000/ask", {
         method: "POST",
@@ -91,11 +121,9 @@ document.addEventListener("DOMContentLoaded", () => {
           format: responseFormat.value
         })
       });
-
       if (!response.ok) {
         throw new Error("Failed to get response from server");
       }
-
       const data = await response.json();
       addMessage(data.answer);
     } catch (error) {
@@ -123,7 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
   sendBtn.addEventListener('click', async () => {
     const question = chatInput.value.trim();
     if (!question) return;
-
     addMessage(question, true);
     chatInput.value = '';
     sendBtn.disabled = true;
@@ -136,17 +163,14 @@ document.addEventListener("DOMContentLoaded", () => {
     statusContainer.style.display = "none";
     summarizeBtn.disabled = true;
     updateProgress(0, "Initializing...");
-
     try {
       // First check if we're on a YouTube video page
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab.url?.includes("youtube.com/watch")) {
         throw new Error("Please navigate to a YouTube video page first.");
       }
-
       updateProgress(20, "Extracting transcript...");
       updateStatus("Extracting transcript from video...");
-
       // Try to get the transcript
       const response = await new Promise((resolve, reject) => {
         chrome.tabs.sendMessage(
@@ -161,35 +185,26 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         );
       });
-
       if (!response?.transcript) {
         throw new Error(response?.error || "Could not find transcript. Make sure captions are available for this video.");
       }
-
       // Store the transcript for chat
       currentTranscript = response.transcript;
-
       updateProgress(40, "Transcript extracted!");
       updateStatus("Transcript extracted successfully", 'success');
       await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause to show success
-
       updateProgress(50, "Sending to AI for summarization...");
       updateStatus("Generating summary...");
-
       // Get the summary from the backend
       const summary = await summarizeTranscript(response.transcript);
-      
       updateProgress(100, "Summary complete!");
       updateStatus("Summary generated successfully", 'success');
-      
       // Format and display the summary
       output.innerHTML = formatSummary(summary);
-      localStorage.setItem("lastSummary", summary);
-
-      // Enable chat
+      // Save state
+      saveState(summary, currentTranscript, chatHistory);
       chatInput.disabled = false;
       chatInput.placeholder = "Ask a question about the video...";
-
     } catch (error) {
       updateStatus(error.message, 'error');
       output.textContent = `❌ ${error.message}`;
@@ -208,12 +223,10 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript })
       });
-
       if (!response.ok) {
         const error = await response.text();
         throw new Error(`Server error: ${error}`);
       }
-
       const data = await response.json();
       return data.summary;
     } catch (err) {
@@ -223,5 +236,21 @@ document.addEventListener("DOMContentLoaded", () => {
       throw err;
     }
   }
+
+  // --- Restore state on load ---
+  (function restoreOnLoad() {
+    const { summary, transcript, chatHistory: savedChat } = loadState();
+    if (summary && transcript) {
+      output.innerHTML = formatSummary(summary);
+      currentTranscript = transcript;
+      chatInput.disabled = false;
+      chatInput.placeholder = "Ask a question about the video...";
+    } else {
+      chatInput.disabled = true;
+      chatInput.placeholder = "Please summarize the video first...";
+    }
+    chatHistory = savedChat || [];
+    renderChatHistory();
+  })();
 });
   
