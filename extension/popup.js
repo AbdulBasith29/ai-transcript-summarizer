@@ -11,29 +11,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("sendBtn");
   const chatMessages = document.getElementById("chatMessages");
   const responseFormat = document.getElementById("responseFormat");
+  const toggleChatBtn = document.getElementById("toggleChatBtn");
 
   let currentTranscript = null;
   let chatHistory = [];
+  let currentVideoId = null;
+  let chatVisible = false;
 
-  // --- Persistence Helpers ---
+  // --- Helpers for per-video storage ---
+  function getVideoIdFromUrl(url) {
+    const match = url.match(/[?&]v=([\w-]{11})/);
+    return match ? match[1] : null;
+  }
+
+  function getStorageKey(key) {
+    return `ytai_${currentVideoId}_${key}`;
+  }
+
   function saveState(summary, transcript, chatHistory) {
-    localStorage.setItem("lastSummary", summary);
-    localStorage.setItem("lastTranscript", transcript);
-    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+    if (!currentVideoId) return;
+    localStorage.setItem(getStorageKey("summary"), summary);
+    localStorage.setItem(getStorageKey("transcript"), transcript);
+    localStorage.setItem(getStorageKey("chatHistory"), JSON.stringify(chatHistory));
   }
 
   function loadState() {
+    if (!currentVideoId) return { summary: null, transcript: null, chatHistory: [] };
     return {
-      summary: localStorage.getItem("lastSummary"),
-      transcript: localStorage.getItem("lastTranscript"),
-      chatHistory: JSON.parse(localStorage.getItem("chatHistory") || "[]")
+      summary: localStorage.getItem(getStorageKey("summary")),
+      transcript: localStorage.getItem(getStorageKey("transcript")),
+      chatHistory: JSON.parse(localStorage.getItem(getStorageKey("chatHistory")) || "[]")
     };
   }
 
   function clearState() {
-    localStorage.removeItem("lastSummary");
-    localStorage.removeItem("lastTranscript");
-    localStorage.removeItem("chatHistory");
+    if (!currentVideoId) return;
+    localStorage.removeItem(getStorageKey("summary"));
+    localStorage.removeItem(getStorageKey("transcript"));
+    localStorage.removeItem(getStorageKey("chatHistory"));
   }
 
   // --- Chat UI ---
@@ -98,13 +113,20 @@ document.addEventListener("DOMContentLoaded", () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
     // Save to chat history
     chatHistory.push({ content, isUser });
-    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+    localStorage.setItem(getStorageKey("chatHistory"), JSON.stringify(chatHistory));
   }
 
   function renderChatHistory() {
     chatMessages.innerHTML = '';
     chatHistory.forEach(msg => addMessage(msg.content, msg.isUser));
   }
+
+  // --- Toggle chat visibility ---
+  toggleChatBtn.addEventListener('click', () => {
+    chatVisible = !chatVisible;
+    chatMessages.style.display = chatVisible ? 'block' : 'none';
+    toggleChatBtn.textContent = chatVisible ? 'Hide Previous Q&A' : 'Show Previous Q&A';
+  });
 
   async function askQuestion(question) {
     if (!currentTranscript) {
@@ -134,11 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle chat input
   chatInput.addEventListener('input', () => {
     sendBtn.disabled = !chatInput.value.trim();
-    // Auto-resize textarea
     chatInput.style.height = 'auto';
     chatInput.style.height = Math.min(chatInput.scrollHeight, 180) + 'px';
   });
-
   chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -147,7 +167,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
-
   sendBtn.addEventListener('click', async () => {
     const question = chatInput.value.trim();
     if (!question) return;
@@ -164,14 +183,21 @@ document.addEventListener("DOMContentLoaded", () => {
     summarizeBtn.disabled = true;
     updateProgress(0, "Initializing...");
     try {
-      // First check if we're on a YouTube video page
+      // Get current video ID
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab.url?.includes("youtube.com/watch")) {
+      currentVideoId = getVideoIdFromUrl(tab.url);
+      if (!tab.url?.includes("youtube.com/watch") || !currentVideoId) {
         throw new Error("Please navigate to a YouTube video page first.");
       }
+      // Clear previous state for new video
+      clearState();
+      chatHistory = [];
+      renderChatHistory();
+      chatVisible = false;
+      chatMessages.style.display = 'none';
+      toggleChatBtn.textContent = 'Show Previous Q&A';
       updateProgress(20, "Extracting transcript...");
       updateStatus("Extracting transcript from video...");
-      // Try to get the transcript
       const response = await new Promise((resolve, reject) => {
         chrome.tabs.sendMessage(
           tab.id,
@@ -188,20 +214,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response?.transcript) {
         throw new Error(response?.error || "Could not find transcript. Make sure captions are available for this video.");
       }
-      // Store the transcript for chat
       currentTranscript = response.transcript;
       updateProgress(40, "Transcript extracted!");
       updateStatus("Transcript extracted successfully", 'success');
-      await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause to show success
+      await new Promise(resolve => setTimeout(resolve, 500));
       updateProgress(50, "Sending to AI for summarization...");
       updateStatus("Generating summary...");
-      // Get the summary from the backend
       const summary = await summarizeTranscript(response.transcript);
       updateProgress(100, "Summary complete!");
       updateStatus("Summary generated successfully", 'success');
-      // Format and display the summary
       output.innerHTML = formatSummary(summary);
-      // Save state
       saveState(summary, currentTranscript, chatHistory);
       chatInput.disabled = false;
       chatInput.placeholder = "Ask a question about the video...";
@@ -238,7 +260,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Restore state on load ---
-  (function restoreOnLoad() {
+  (async function restoreOnLoad() {
+    // Get current video ID
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    currentVideoId = getVideoIdFromUrl(tab.url);
     const { summary, transcript, chatHistory: savedChat } = loadState();
     if (summary && transcript) {
       output.innerHTML = formatSummary(summary);
@@ -251,6 +276,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     chatHistory = savedChat || [];
     renderChatHistory();
+    chatVisible = false;
+    chatMessages.style.display = 'none';
+    toggleChatBtn.textContent = 'Show Previous Q&A';
   })();
 });
   
